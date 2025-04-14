@@ -1,8 +1,16 @@
 import SwiftUI
 
+enum PracticeMode {
+    case pinyin
+    case mixed
+    case vietnamese
+    case chineseCharacters
+}
+
 struct LessonDetailView: View {
     let lesson: Lesson
     @State private var showingPractice = false
+    @State private var selectedMode: PracticeMode = .mixed
     @StateObject private var speechService = SpeechService()
     
     var body: some View {
@@ -38,14 +46,48 @@ struct LessonDetailView: View {
                     .padding(.vertical, 8)
                 }
             }
-            
-            Section {
+        }
+        .navigationTitle(lesson.title)
+        .safeAreaInset(edge: .bottom) {
+            VStack(spacing: 12) {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach([
+                            (PracticeMode.mixed, "shuffle", "Mixed"),
+                            (PracticeMode.pinyin, "textformat.abc", "Pinyin Only"),
+                            (PracticeMode.vietnamese, "textformat.alt", "Vietnamese Only"),
+                            (PracticeMode.chineseCharacters, "character.textbox", "Chinese Characters Only")
+                        ], id: \.0) { mode, icon, title in
+                            Button(action: {
+                                selectedMode = mode
+                            }) {
+                                VStack(spacing: 8) {
+                                    Image(systemName: icon)
+                                        .font(.system(size: 24))
+                                    Text(title)
+                                        .font(.caption)
+                                }
+                                .frame(width: 100)
+                                .padding(.vertical, 8)
+                                .background(selectedMode == mode ? Color.blue.opacity(0.2) : Color.clear)
+                                .foregroundColor(selectedMode == mode ? .blue : .primary)
+                                .cornerRadius(10)
+                            }
+                        }
+                    }
+                    .padding(.horizontal)
+                }
+                .padding(.vertical, 8)
+                
+                // Practice button
                 Button(action: {
                     showingPractice = true
                 }) {
                     HStack {
                         Image(systemName: "play.circle.fill")
+                            .font(.system(size: 24))
                         Text("Start Practice")
+                            .font(.headline)
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
@@ -53,13 +95,17 @@ struct LessonDetailView: View {
                     .foregroundColor(.white)
                     .cornerRadius(10)
                 }
-                .listRowInsets(EdgeInsets())
-                .padding()
+                .padding(.horizontal)
             }
+            .padding(.vertical, 12)
+            .background(
+                Rectangle()
+                    .fill(.ultraThinMaterial)
+                    .ignoresSafeArea()
+            )
         }
-        .navigationTitle(lesson.title)
         .sheet(isPresented: $showingPractice) {
-            PracticeView(lesson: lesson)
+            PracticeView(lesson: lesson, mode: selectedMode)
         }
     }
 }
