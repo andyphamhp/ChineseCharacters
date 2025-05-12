@@ -1,19 +1,21 @@
 import Foundation
 
-struct ChineseWord: Identifiable {
+struct ChineseWord: Identifiable, Equatable {
     let id = UUID()
     let character: String
     let pinyin: String
     let vietnameseMeaning: String
     let englishMeaning: String
-    let example: String?
+    let chineseExample: String?
+    let vietnameseExample: String?
     
     init(character: String, pinyin: String, vietnameseMeaning: String, englishMeaning: String, 
-         example: String? = nil) {
+         chineseExample: String? = nil, vietnameseExample: String? = nil) {
         self.character = character
         self.pinyin = pinyin
         self.vietnameseMeaning = vietnameseMeaning
         self.englishMeaning = englishMeaning
-        self.example = example
+        self.chineseExample = chineseExample
+        self.vietnameseExample = vietnameseExample
     }
 } 

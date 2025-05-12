@@ -7,6 +7,108 @@ enum PracticeType {
     case writeCharacter
 }
 
+// MARK: - Word Display View
+struct WordDisplayView: View {
+    let word: ChineseWord
+    let practiceType: PracticeType
+    let mode: PracticeMode
+    let speechService: SpeechService
+    
+    var body: some View {
+        if practiceType == .writeCharacter {
+            VStack(spacing: 12) {
+                Text(word.vietnameseMeaning)
+                    .font(.title2)
+                    .foregroundColor(.primary)
+                
+                if mode != .chineseCharacters {
+                    Text(word.pinyin)
+                        .font(.headline)
+                        .foregroundColor(.secondary)
+                }
+            }
+            .padding()
+        } else {
+            HStack {
+                Text(word.character)
+                    .font(.system(size: 48))
+                    .padding()
+                
+                Button(action: {
+                    speechService.speak(text: word.character)
+                }) {
+                    Image(systemName: "speaker.wave.2.fill")
+                        .foregroundColor(.blue)
+                        .font(.system(size: 24))
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Feedback View
+struct FeedbackView: View {
+    let isCorrect: Bool
+    let correctAnswer: String
+    let word: ChineseWord
+    let practiceType: PracticeType
+    let mode: PracticeMode
+    let speechService: SpeechService
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            Text(isCorrect ? "Correct! 🎉" : "Incorrect. Try again.")
+                .foregroundColor(isCorrect ? .green : .red)
+                .font(.headline)
+            
+            if practiceType == .writeCharacter {
+                HStack {
+                    Text("Correct: ")
+                    Text(correctAnswer)
+                        .font(.system(size: 32))
+                }
+                .foregroundColor(.secondary)
+            } else {
+                Text("Correct answer: \(correctAnswer)")
+                    .foregroundColor(.secondary)
+            }
+            
+            Text("Pinyin: \(word.pinyin)")
+                .foregroundColor(.secondary)
+            
+            if mode == .chineseCharacters {
+                Text("English: \(word.englishMeaning)")
+                    .foregroundColor(.secondary)
+            }
+            
+            if let chineseExample = word.chineseExample, let vietnameseExample = word.vietnameseExample {
+                VStack(alignment: .center, spacing: 4) {
+                    HStack {
+                        Spacer()
+                        Text("Example: \(chineseExample)")
+                            .foregroundColor(.secondary)
+                        Button(action: {
+                            speechService.speak(text: chineseExample)
+                        }) {
+                            Image(systemName: "speaker.wave.2.fill")
+                                .foregroundColor(.blue)
+                                .font(.system(size: 16))
+                        }
+                        Spacer()
+                    }
+                    Text("\(vietnameseExample)")
+                        .foregroundColor(.secondary)
+                        .font(.subheadline)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(.horizontal)
+            }
+        }
+        .transition(.opacity)
+    }
+}
+
+// MARK: - Main Practice View
 struct PracticeView: View {
     let lesson: Lesson
     let mode: PracticeMode
@@ -64,35 +166,8 @@ struct PracticeView: View {
                     .font(.headline)
                 
                 if let word = currentWord {
-                    // Question
-                    if practiceType == .writeCharacter {
-                        VStack(spacing: 12) {
-                            Text(word.vietnameseMeaning)
-                                .font(.title2)
-                                .foregroundColor(.primary)
-                            
-                            if mode != .chineseCharacters {
-                                Text(word.pinyin)
-                                    .font(.headline)
-                                    .foregroundColor(.secondary)
-                            }
-                        }
-                        .padding()
-                    } else {
-                        HStack {
-                            Text(word.character)
-                                .font(.system(size: 48))
-                                .padding()
-                            
-                            Button(action: {
-                                speechService.speak(text: word.character)
-                            }) {
-                                Image(systemName: "speaker.wave.2.fill")
-                                    .foregroundColor(.blue)
-                                    .font(.system(size: 24))
-                            }
-                        }
-                    }
+                    // Word Display
+                    WordDisplayView(word: word, practiceType: practiceType, mode: mode, speechService: speechService)
                     
                     Text(questionText)
                         .font(.headline)
@@ -118,37 +193,7 @@ struct PracticeView: View {
                     
                     // Feedback
                     if showingFeedback {
-                        VStack(spacing: 8) {
-                            Text(isCorrect ? "Correct! 🎉" : "Incorrect. Try again.")
-                                .foregroundColor(isCorrect ? .green : .red)
-                                .font(.headline)
-                            
-                            if practiceType == .writeCharacter {
-                                HStack {
-                                    Text("Correct: ")
-                                    Text(correctAnswer)
-                                        .font(.system(size: 32))
-                                }
-                                .foregroundColor(.secondary)
-                            } else {
-                                Text("Correct answer: \(correctAnswer)")
-                                    .foregroundColor(.secondary)
-                            }
-                            
-                            Text("Pinyin: \(word.pinyin)")
-                                .foregroundColor(.secondary)
-
-                            if mode == .chineseCharacters {
-                                Text("English: \(word.englishMeaning)")
-                                    .foregroundColor(.secondary)
-                            }
-                            
-                            if let example = word.example {
-                                Text("Example: \(example)")
-                                    .foregroundColor(.secondary)
-                            }
-                        }
-                        .transition(.opacity)
+                        FeedbackView(isCorrect: isCorrect, correctAnswer: correctAnswer, word: word, practiceType: practiceType, mode: mode, speechService: speechService)
                     }
                 } else {
                     ProgressView()
@@ -172,9 +217,46 @@ struct PracticeView: View {
                 }
             }
             .onAppear {
-                // Initialize randomized indices when view appears
-                randomizedIndices = Array(0..<lesson.words.count).shuffled()
-                // Set initial practice type based on mode
+                initializePractice()
+            }
+            .onChange(of: showingFeedback, { oldValue, newValue in
+                if !newValue {
+                    isAnswerFocused = true
+                }
+            })
+            .animation(.easeInOut, value: showingFeedback)
+        }
+    }
+    
+    private func initializePractice() {
+        randomizedIndices = Array(0..<lesson.words.count).shuffled()
+        switch mode {
+        case .pinyin:
+            practiceType = .pinyin
+        case .vietnamese:
+            practiceType = .meaning
+        case .chineseCharacters:
+            practiceType = .writeCharacter
+        case .mixed:
+            practiceType = [.meaning, .pinyin, .english, .writeCharacter].randomElement()!
+        }
+        isAnswerFocused = true
+    }
+    
+    private func checkAnswer() {
+        if showingFeedback {
+            handleNextQuestion()
+        } else {
+            evaluateAnswer()
+        }
+    }
+    
+    private func handleNextQuestion() {
+        if currentWordIndex < lesson.words.count - 1 {
+            withAnimation {
+                currentWordIndex += 1
+                userAnswer = ""
+                showingFeedback = false
                 switch mode {
                 case .pinyin:
                     practiceType = .pinyin
@@ -185,63 +267,31 @@ struct PracticeView: View {
                 case .mixed:
                     practiceType = [.meaning, .pinyin, .english, .writeCharacter].randomElement()!
                 }
-                // Focus the answer field when view appears
-                isAnswerFocused = true
             }
-            .onChange(of: showingFeedback, { oldValue, newValue in
-                if !newValue {
-                    // Focus the answer field when feedback is hidden (moving to next question)
-                    isAnswerFocused = true
-                }
-            })
-            .animation(.easeInOut, value: showingFeedback)
+        } else {
+            dismiss()
         }
     }
     
-    private func checkAnswer() {
-        if showingFeedback {
-            if currentWordIndex < lesson.words.count - 1 {
-                withAnimation {
-                    currentWordIndex += 1
-                    userAnswer = ""
-                    showingFeedback = false
-                    // Set next practice type based on mode
-                    switch mode {
-                    case .pinyin:
-                        practiceType = .pinyin
-                    case .vietnamese:
-                        practiceType = .meaning
-                    case .chineseCharacters:
-                        practiceType = .writeCharacter
-                    case .mixed:
-                        practiceType = [.meaning, .pinyin, .english, .writeCharacter].randomElement()!
-                    }
-                }
-            } else {
-                dismiss()
-            }
-        } else {
-            let correctAnswer = correctAnswer.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
-            let userAnswerLowered = userAnswer.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
-            
-            // Split correct answer by commas and check if user's answer matches any part
-            let correctParts = correctAnswer.split(separator: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            isCorrect = correctParts.contains { $0 == userAnswerLowered }
-            
-            if isCorrect {
-                correctCount += 1
-                soundService.playCorrectSound()
-            }
-            
-            withAnimation {
-                showingFeedback = true
-            }
-            
-            // Speak the word again after showing feedback in Vietnamese mode
-            if (mode == .vietnamese || mode == .chineseCharacters), let word = currentWord {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    speechService.speak(text: word.character)
-                }
+    private func evaluateAnswer() {
+        let correctAnswer = correctAnswer.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        let userAnswerLowered = userAnswer.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        let correctParts = correctAnswer.split(separator: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        isCorrect = correctParts.contains { $0 == userAnswerLowered }
+        
+        if isCorrect {
+            correctCount += 1
+            soundService.playCorrectSound()
+        }
+        
+        withAnimation {
+            showingFeedback = true
+        }
+        
+        if (mode == .vietnamese || mode == .chineseCharacters), let word = currentWord {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                speechService.speak(text: word.character)
             }
         }
     }
