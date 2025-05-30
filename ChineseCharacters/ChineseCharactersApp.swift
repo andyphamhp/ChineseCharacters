@@ -12,7 +12,7 @@ import SwiftData
 struct ChineseCharactersApp: App {
     var body: some Scene {
         WindowGroup {
-            LessonListView()
+            MainTabView()
         }
     }
 }

@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(xcodebuild:*)",
+      "Bash(mkdir:*)",
+      "Bash(touch:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(claude mcp add sequential-thinking npx -y @modelcontextprotocol/server-sequential-thinking)",
+      "Bash(claude mcp add sequential-thinking npx -- -y @modelcontextprotocol/server-sequential-thinking)",
+      "Bash(claude mcp:*)",
+      "mcp__sequential-thinking__sequentialthinking",
+      "Bash(git add:*)",
+      "Bash(gh:*)"
+    ]
+  },
+  "enableAllProjectMcpServers": false
+}
