@@ -18,4 +18,14 @@ struct ChineseWord: Identifiable, Equatable {
         self.chineseExample = chineseExample
         self.vietnameseExample = vietnameseExample
     }
+    
+    // Custom Equatable implementation based on content, not ID
+    static func == (lhs: ChineseWord, rhs: ChineseWord) -> Bool {
+        return lhs.character == rhs.character &&
+               lhs.pinyin == rhs.pinyin &&
+               lhs.vietnameseMeaning == rhs.vietnameseMeaning &&
+               lhs.englishMeaning == rhs.englishMeaning &&
+               lhs.chineseExample == rhs.chineseExample &&
+               lhs.vietnameseExample == rhs.vietnameseExample
+    }
 } 
