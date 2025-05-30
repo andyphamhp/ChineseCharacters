@@ -85,10 +85,46 @@ xcodebuild -scheme ChineseCharacters -destination 'platform=iOS Simulator,name=i
 - Text-to-speech requires device language support for Chinese
 - No external dependencies - uses only Apple frameworks
 - Build artifacts are stored in Xcode's DerivedData directory (see buildServer.json)
-- **IMPORTANT**: Always compile and check for errors after updating code by running:
-  ```bash
-  xcodebuild -scheme ChineseCharacters -destination 'platform=iOS Simulator,name=iPhone 16' build
-  ```
+
+## MANDATORY Development Rules
+
+### **Test-Driven Development Protocol**
+**CRITICAL**: After ANY code changes (new features, bug fixes, refactoring), you MUST:
+
+1. **Compile and Build** - Ensure code compiles successfully:
+   ```bash
+   xcodebuild -scheme ChineseCharacters -destination 'platform=iOS Simulator,name=iPhone 16' build
+   ```
+
+2. **Run All Tests** - Verify all tests pass before proceeding:
+   ```bash
+   # Run unit tests
+   xcodebuild test -scheme ChineseCharacters -destination 'platform=iOS Simulator,name=iPhone 16' -only-testing:ChineseCharactersTests
+   
+   # Run UI tests (if changes affect UI)
+   xcodebuild test -scheme ChineseCharacters -destination 'platform=iOS Simulator,name=iPhone 16' -only-testing:ChineseCharactersUITests
+   ```
+
+3. **Fix All Failures** - Address any compilation errors or test failures immediately
+
+### **Quality Gates**
+- **No broken builds**: Code must compile without errors
+- **No failing tests**: All existing tests must continue to pass
+- **Test coverage**: New features MUST include corresponding tests
+- **Documentation**: Update tests when changing existing functionality
+
+### **Enforcement**
+- **STOP immediately** if builds fail or tests don't pass
+- **Do NOT proceed** to next development steps until all tests are green
+- **Add new tests** for any new functionality before considering the work complete
+- **Update existing tests** if behavior changes are intentional
+
+### **Exception Handling**
+- If tests fail due to intentional breaking changes, update tests first
+- If build fails, fix compilation errors before any other work
+- Document any test changes in commit messages
+
+This protocol ensures code quality, prevents regressions, and maintains a stable codebase.
 
 ## Memory bank
 @memory-bank.md
